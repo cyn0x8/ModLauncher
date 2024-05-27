@@ -1,0 +1,63 @@
+import flixel.group.FlxTypedSpriteGroup;
+
+import funkin.graphics.FunkinCamera;
+import funkin.graphics.FunkinSprite;
+import funkin.modding.module.Module;
+
+typedef Bind = {
+	// to pass into the `bind` function
+	name:String, // name of your mod, `Save.instance.modOptions.get("ModLauncher").selected_mod` will be set to this after on_init
+	target:String, // target `ScriptedMusicBeatState` class name to open after `on_init`
+	
+	logo:FunkinSprite, // the logo sprite
+	bg_group:FlxTypedSpriteGroup, // the sprite group added to your mod bg camera
+	
+	on_setup:Null<(Dynamic)->Void>, // called when your mod is first bound (camera exists starting here)
+	
+	on_update:Null<(Dynamic, Float)->Void>, // called every frame
+	
+	on_focus:Null<(Dynamic)->Void>, // when the user focuses on your mod
+	on_unfocus:Null<(Dynamic)->Void>, // when the user changes selection to another mod
+	
+	on_select:Null<(Dynamic)->Void>, // when the user selects your mod
+	on_init:Null<(Dynamic)->Void>, // code to run right before the target state opens
+	
+	// internally set up by the launcher
+	cam: Null<FunkinCamera>, // the bg camera `bg_group` is added to
+	logo_scale: Float // the base scale of the logo (automatically resized to half screen height)
+}
+
+class ModLauncher_Binding extends Module {
+	public function new() {
+		super("ModLauncher_Binding", 2);
+	}
+	
+	public function onCreate(event:ScriptEvent):Void {
+		this.active = false;
+	}
+	
+	public var binds:Array<Dynamic> = [];
+	
+	public function bind(data:Dynamic):Void {
+		binds.push({
+			name:       data.name,
+			target:     data.target,
+			
+			logo:       data.logo,
+			bg_group:   data.bg_group,
+			
+			on_setup:   data.on_setup,
+			
+			on_update:  data.on_update,
+			
+			on_focus:   data.on_focus,
+			on_unfocus: data.on_unfocus,
+			
+			on_select:  data.on_select,
+			on_init:    data.on_init,
+			
+			cam: null,
+			logo_scale: 0
+		});
+	}
+}

@@ -1,0 +1,64 @@
+import flixel.FlxG;
+
+import funkin.Preferences;
+
+import funkin.modding.base.ScriptedMusicBeatState;
+import funkin.modding.module.Module;
+import funkin.save.Save;
+import funkin.ui.title.TitleState;
+import funkin.util.ReflectUtil;
+import funkin.util.WindowUtil;
+
+class ModLauncher_Init extends Module {
+	public var initialized:Bool = false;
+	
+	public function new() {
+		super("ModLauncher_Init", 1);
+	}
+	
+	public function onCreate(event:ScriptEvent):Void {
+		FlxG.mouse.set_visible(false);
+		
+		if (Save.instance.modOptions.get("ModLauncher") == null) {
+			Save.instance.modOptions.set("ModLauncher", {
+				selected_mod: ""
+			});
+		}
+		
+		WindowUtil.windowExit.add(exit);
+	}
+	
+	public function onStateChangeEnd(event:StateChangeScriptEvent):Void {
+		if (Std.isOfType(event.targetState, TitleState)) {
+			if (initialized || (!initialized && Save.instance.modOptions.get("ModLauncher").selected_mod == "none")) {
+				return;
+			}
+			
+			initialized = true;
+			
+			FlxG.switchState(ScriptedMusicBeatState.init("ModLauncher_State"));
+		}
+	}
+	
+	public function onDestroy(event:ScriptEvent):Void {
+		trace("refreshing with selected mod \"" + Save.instance.modOptions.get("ModLauncher").selected_mod + "\"");
+		
+		if (Save.instance.modOptions.get("ModLauncher").selected_mod == "none") {
+			Save.instance.modOptions.get("ModLauncher").selected_mod = "";
+		}
+		
+		Save.instance.flush();
+		
+		if (WindowUtil.windowExit.has(exit)) {
+			WindowUtil.windowExit.remove(exit);
+		}
+	}
+	
+	public function exit(_):Void {
+		Save.instance.modOptions.get("ModLauncher").selected_mod = "";
+		
+		Save.instance.flush();
+		
+		trace("selected mod cleared");
+	}
+}

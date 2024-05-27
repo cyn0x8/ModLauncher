@@ -1,0 +1,366 @@
+import openfl.filters.ShaderFilter;
+
+import flixel.FlxG;
+import flixel.addons.display.FlxBackdrop;
+import flixel.group.FlxTypedSpriteGroup;
+import flixel.math.FlxMath;
+import flixel.tweens.FlxTween;
+import flixel.tweens.FlxEase;
+import flixel.util.FlxTimer;
+
+import funkin.Paths;
+import funkin.PlayerSettings;
+import funkin.audio.FunkinSound;
+import funkin.graphics.FunkinCamera;
+import funkin.graphics.FunkinSprite;
+import funkin.modding.base.ScriptedFlxRuntimeShader;
+import funkin.modding.base.ScriptedMusicBeatState;
+import funkin.modding.module.ModuleHandler;
+import funkin.save.Save;
+import funkin.ui.Alphabet;
+import funkin.util.MathUtil;
+
+class ModLauncher_State extends ScriptedMusicBeatState {
+	private var ambience:FunkinSound;
+	private var music:FunkinSound;
+	
+	public var cam_ui:FunkinCamera;
+	private var underlay:FlxBackdrop;
+	private var logos:FlxTypedSpriteGroup;
+	private var header:Alphabet;
+	
+	private var input:Bool = true;
+	private var selected:Int = 0;
+	private var binds:Array<Dynamic>;
+	
+	public function new() {
+		super();
+		
+		persistentUpdate = true;
+	}
+	
+	private function setup_fnf_bind():Void {
+		var bg_group:FlxTypedSpriteGroup = new FlxTypedSpriteGroup();
+		
+		var bg:FlxBackdrop = new FlxBackdrop(Paths.image("ModLauncher/fnf/bricks"));
+		bg.scale.set(0.5, 0.5);
+		bg.antialiasing = true;
+		bg_group.add(bg);
+		bg.scrollFactor.set(0.2, 0.2);
+		
+		for (i in 0 ... 2) {
+			var truss:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/truss");
+			
+			var z:Float = FlxG.random.float(2 / 3, 0.875);
+			truss.scale.set(z, z);
+			
+			truss.screenCenter();
+			truss.y += i * 720 - 360;
+			truss.angle = FlxG.random.float(-30, 30);
+			
+			truss.antialiasing = true;
+			bg_group.add(truss);
+			
+			z = FlxMath.remapToRange(z, 2 / 3, 0.875, 0.3, 0.8);
+			truss.scrollFactor.set(z, z);
+		}
+		
+		for (i in 0 ... 3) {
+			var line:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/line");
+			
+			var z:Float = FlxG.random.float(1.5, 3);
+			line.scale.set(z, z);
+			
+			line.screenCenter();
+			line.y = FlxG.random.float(-720, binds.length * 720);
+			
+			line.angle = FlxG.random.float(-30, 30);
+			
+			line.antialiasing = true;
+			bg_group.add(line);
+			
+			z = FlxMath.remapToRange(z, 1.5, 3, 0.5, 0.9);
+			line.scrollFactor.set(z, z);
+		}
+		
+		var light_1:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/light");
+		light_1.scale.set(3, 2);
+		light_1.updateHitbox();
+		light_1.screenCenter(0x01); // X
+		light_1.y = -light_1.frameHeight / 2 * light_1.scale.y - 50;
+		light_1.color = 0xff9040ff;
+		light_1.blend = 0; // add
+		light_1.alpha = 0.25;
+		bg_group.add(light_1);
+		light_1.scrollFactor.set(0.25, 0.25);
+		
+		var light_2:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/light");
+		light_2.scale.set(10, 2.5);
+		light_2.updateHitbox();
+		light_2.screenCenter(0x01); // X
+		light_2.y = 720 - light_2.frameHeight / 2 * light_2.scale.y + 50;
+		light_2.color = 0xff0000ff;
+		light_2.blend = 9; // multiply
+		light_2.alpha = 0.75;
+		bg_group.add(light_2);
+		light_2.scrollFactor.set(0.25, 0.25);
+		
+		var noise_shader:ScriptedFlxRuntimeShader = ScriptedFlxRuntimeShader.init("ModLauncher_NoiseShader");
+		noise_shader.scriptCall("set_size", [1]);
+		noise_shader.scriptCall("set_mix", [0.25]);
+		
+		var logo:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/logo");
+		
+		ModuleHandler.getModule("ModLauncher_Binding").scriptCall("bind", [{
+			name: "none",
+			
+			target: "FNF_TitleState",
+			
+			logo: logo,
+			
+			bg_group: bg_group,
+			
+			on_setup: (data:Dynamic) -> {
+				data.cam.filters = [new ShaderFilter(noise_shader)];
+			},
+			
+			on_focus: null,
+			on_defocus: null,
+			
+			on_select: null,
+			
+			on_update: (data:Dynamic, elapsed:Float) -> {
+				noise_shader.scriptCall("set_time", [noise_shader.scriptCall("get_time") + elapsed * 2]);
+			}
+		}]);
+		
+		binds.unshift(binds.pop());
+	}
+	
+	public function create():Void {
+		super.create();
+		
+		Save.instance.modOptions.get("ModLauncher").selected_mod = "";
+		
+		ambience = FunkinSound.load(Paths.sound("ModLauncher/ambience"), 0, true, true, true);
+		ambience.fadeIn(0.75);
+		ambience.persist = false;
+		
+		music = FunkinSound.load(Paths.sound("ModLauncher/music_" + Std.string(FlxG.random.int(0, 5))), 0, true, true, true);
+		music.fadeIn(0.75);
+		music.persist = false;
+		
+		binds = ModuleHandler.getModule("ModLauncher_Binding").scriptGet("binds");
+		
+		setup_fnf_bind();
+		
+		for (i in 0 ... binds.length) {
+			var data:Dynamic = binds[i];
+			
+			var cam:FlxCamera = new FunkinCamera("ModLauncher_cam_" + data.name, 0, 0, 1280, 720, 1);
+			cam.zoom = 1.25;
+			cam.alpha = i == selected ? 1 : 0.0001;
+			FlxG.cameras.add(cam, false);
+			FlxTween.tween(cam, {zoom: 1}, 1, {ease: FlxEase.expoOut});
+			data.cam = cam;
+			
+			var bg_group:FlxTypedSpriteGroup = data.bg_group;
+			
+			if (bg_group == null) {
+				bg_group = new FlxTypedSpriteGroup();
+				data.bg_group = bg_group;
+			}
+			
+			bg_group.cameras = [cam];
+			add(bg_group);
+		}
+		
+		cam_ui = new FunkinCamera("ModLauncher_cam_ui", 0, 0, 1280, 720, 1);
+		cam_ui.bgColor = 0x00000000;
+		cam_ui.zoom = 1.25;
+		FlxG.cameras.add(cam_ui, true);
+		FlxTween.tween(cam_ui, {zoom: 1}, 1.25, {ease: FlxEase.expoOut});
+		
+		underlay = new FlxBackdrop().makeGraphic(1280, 720, 0xff000000);
+		underlay.scrollFactor.set(0, 0);
+		underlay.cameras = [cam_ui];
+		underlay.alpha = 0.0001;
+		add(underlay);
+		
+		logos = new FlxTypedSpriteGroup();
+		
+		for (i in 0 ... binds.length) {
+			var data:Dynamic = binds[i];
+			
+			var logo = data.logo;
+			
+			if (logo == null || logo.frameWidth == 0 || logo.frameHeight == 0) {
+				logo = new FunkinSprite().makeGraphic(1, 1, 0xffffffff);
+				data.logo = logo;
+			}
+			
+			var scale:Float = (720 / logo.frameHeight) * 0.5;
+			logo.updateHitbox();
+			logo.screenCenter();
+			logo.y += i * 720;
+			
+			data.logo_scale = scale;
+			
+			scale *= i == selected ? 1 : 0.75;
+			logo.scale.set(scale, scale);
+			
+			logo.cameras = [cam_ui];
+			logos.add(logo);
+			
+			if (data.on_setup != null) {
+				data.on_setup(data);
+			}
+		}
+		
+		add(logos);
+		
+		var first:Dynamic = binds[0];
+		FlxTween.globalManager.cancelTweensOf(first.logo.scale, ["x", "y"]);
+		first.logo.scale.set(first.logo_scale + 0.5, first.logo_scale + 0.5);
+		FlxTween.tween(first.logo.scale, {x: first.logo_scale, y: first.logo_scale}, 1, {ease: FlxEase.expoOut});
+		
+		var text_scale:Float = 0.5;
+		header = new Alphabet(0, 15, "title select", true, false);
+		header.scale.set(text_scale, text_scale);
+		
+		for (member in header.members) {
+			member.x *= text_scale;
+			member.y *= text_scale;
+		}
+		
+		header.screenCenter(0x01); // X
+		header.scrollFactor.set(0, 0);
+		header.antialiasing = true;
+		header.cameras = [cam_ui];
+		add(header);
+		
+		if (binds.length <= 1) {
+			FlxG.switchState(ScriptedMusicBeatState.init(first.target));
+			FlxG.sound.music = null;
+		}
+	}
+	
+	private function increment(dir:Int):Void {
+		FunkinSound.playOnce(Paths.sound("scrollMenu"), 0.75);
+		
+		var data:Dynamic = binds[selected];
+		
+		FlxTween.globalManager.cancelTweensOf(data.logo.scale, ["x", "y"]);
+		FlxTween.tween(data.logo.scale, {x: data.logo_scale * (2 / 3), y: data.logo_scale * (2 / 3)}, 1, {ease: FlxEase.expoOut});
+		
+		if (selected.on_defocus != null) {
+			selected.on_defocus(data);
+		}
+		
+		selected = (selected + dir + binds.length) % binds.length;
+		data = binds[selected];
+		
+		FlxTween.globalManager.cancelTweensOf(data.logo.scale, ["x", "y"]);
+		FlxTween.tween(data.logo.scale, {x: data.logo_scale, y: data.logo_scale}, 1, {ease: FlxEase.expoOut});
+		
+		FlxTween.globalManager.cancelTweensOf(underlay, ["alpha"]);
+		underlay.alpha = 0.0001;
+		FlxTween.tween(underlay, {alpha: 1}, 0.25, {ease: FlxEase.quadIn, onComplete: (tween:FlxTween) -> {
+			if (data.on_focus != null) {
+				data.on_focus(data);
+			}
+			
+			for (i in 0 ... binds.length) {
+				binds[i].cam.alpha = i == selected ? 1 : 0.0001;
+			}
+			
+			underlay.alpha = 1;
+			FlxTween.tween(underlay, {alpha: 0.0001}, 0.25, {ease: FlxEase.quadOut});
+		}});
+	}
+	
+	public override function update(elapsed:Float):Void {
+		super.update(elapsed);
+		
+		if (input && PlayerSettings.player1.controls.ACCEPT) {
+			input = false;
+			
+			FunkinSound.playOnce(Paths.sound("confirmMenu"), 0.75);
+			
+			ambience.fadeOut(1, 0, (tween:FlxTween) -> {
+				ambience.stop();
+				ambience.destroy();
+				
+				tween.destroy();
+			});
+			
+			music.fadeOut(1, 0, (tween:FlxTween) -> {
+				music.stop();
+				music.destroy();
+				
+				tween.destroy();
+			});
+			
+			FlxTween.tween(cam_ui, {zoom: 1.15}, 2, {ease: FlxEase.expoOut});
+			
+			FlxTween.tween(header, {y: -50}, 1, {ease: FlxEase.cubeOut});
+			
+			for (i in 0 ... binds.length) {
+				FlxTween.tween(binds[i].cam, {zoom: 1.075}, 2, {ease: FlxEase.expoOut});
+			}
+			
+			var data:Dynamic = binds[selected];
+			
+			FlxTween.globalManager.cancelTweensOf(data.logo.scale, ["x", "y"]);
+			data.logo.scale.set(data.logo_scale * 0.9, data.logo_scale * 0.9);
+			FlxTween.tween(data.logo.scale, {x: data.logo_scale, y: data.logo_scale}, 2, {ease: FlxEase.circOut});
+			
+			new FlxTimer().start(1, () -> {
+				transitionOut(() -> {
+					for (logo in logos.members) {
+						logo.alpha = 0.0001;
+					}
+					
+					header.alpha = 0.0001;
+					
+					cam_ui.bgColor = 0xff000000;
+					
+					new FlxTimer().start(0.5, () -> {
+						Save.instance.modOptions.get("ModLauncher").selected_mod = data.name;
+						
+						if (data.on_init != null) {
+							data.on_init(data);
+						}
+						
+						FlxG.switchState(ScriptedMusicBeatState.init(data.target));
+						FlxG.sound.music = null;
+						
+						trace("selected mod \"" + Save.instance.modOptions.get("ModLauncher").selected_mod + "\"");
+					});
+				});
+			});
+			
+			if (data.on_select != null) {
+				data.on_select(data);
+			}
+		} else if (PlayerSettings.player1.controls.UI_UP_P) {
+			increment(-1);
+		} else if (PlayerSettings.player1.controls.UI_DOWN_P) {
+			increment(1);
+		}
+		
+		cam_ui.scroll.y = MathUtil.lerp(selected * 720, cam_ui.scroll.y, MathUtil.exp2(-elapsed / 0.125));
+		
+		for (i in 0 ... binds.length) {
+			var data:Dynamic = binds[i];
+			
+			data.cam.scroll.y = cam_ui.scroll.y - i * 720;
+			
+			if (data.on_update != null) {
+				data.on_update(data, elapsed);
+			}
+		}
+		
+		FlxG.mouse.set_visible(false);
+	}
+}

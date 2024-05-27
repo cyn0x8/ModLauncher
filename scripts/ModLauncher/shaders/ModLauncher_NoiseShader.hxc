@@ -1,0 +1,23 @@
+import openfl.utils.Assets;
+
+import funkin.Paths;
+import funkin.modding.base.ScriptedFlxRuntimeShader;
+
+class ModLauncher_NoiseShader extends ScriptedFlxRuntimeShader {
+	function new(size:Float = 1, time:Float = 0, mix:Float = 0) {
+		super(Assets.getText(Paths.frag("ModLauncher/noise")));
+		
+		set_size(size);
+		set_time(time);
+		set_mix(mix);
+	}
+	
+	public function set_size(size:Float):Void {setFloat("u_size", size);}
+	public function get_size():Float {return getFloat("u_size");}
+	
+	public function set_time(time:Float):Void {setFloat("u_time", time);}
+	public function get_time():Float {return getFloat("u_time");}
+	
+	public function set_mix(mix:Float):Void {setFloat("u_mix", mix);}
+	public function get_mix():Float {return getFloat("u_mix");}
+}
