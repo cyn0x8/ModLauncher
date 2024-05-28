@@ -92,6 +92,8 @@ typedef Bind = {
 
 ## Compatibility
 
+While Modlauncher_Binding isn't compatible with BootStrapBinds, if [ModBootstrap](https://gamebanana.com/mods/516273) is detected, ModLauncher will show up on the ModBootstrap menu.
+
 If you want your mod to be compatible with both, use `ModuleHandler` to check for `BootStrapBinds` first, and then `ModLauncher_Binding`, to bind conditionally to either. I don't recommend adding this mod as a dependency for this reason, unless you plan to use this launcher exclusively.
 
 ```haxe
