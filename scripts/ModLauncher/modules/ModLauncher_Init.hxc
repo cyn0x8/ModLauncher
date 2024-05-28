@@ -29,7 +29,7 @@ class ModLauncher_Init extends Module {
 			trace("ModBootstrap found, adding to BootStrapBinds");
 			bootstrap = true;
 			ModuleHandler.getModule("BootStrapBinds").scriptCall("bind", [{
-				name: "ModLancher",
+				name: "ModLauncher",
 				description: "A simple system for launching mod states on startup.",
 				target: "ModLauncher_State",
 				logo: '',
