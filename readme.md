@@ -92,8 +92,6 @@ typedef Bind = {
 
 ## Compatibility
 
-Incompatible with [ModBootstrap](https://gamebanana.com/mods/516273), this mod will disable itself if it's detected.
-
 If you want your mod to be compatible with both, use `ModuleHandler` to check for `BootStrapBinds` first, and then `ModLauncher_Binding`, to bind conditionally to either. I don't recommend adding this mod as a dependency for this reason, unless you plan to use this launcher exclusively.
 
 ```haxe
