@@ -33,7 +33,7 @@ class ModLauncher_Binding extends Module {
 	}
 	
 	public function onCreate(event:ScriptEvent):Void {
-		this.active = false;
+		active = false;
 	}
 	
 	public var binds:Array<Dynamic> = [];

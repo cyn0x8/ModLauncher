@@ -1,6 +1,5 @@
 import flixel.FlxG;
 
-import funkin.Paths;
 import funkin.modding.base.ScriptedMusicBeatState;
 import funkin.ui.title.TitleState;
 

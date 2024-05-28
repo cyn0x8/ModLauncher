@@ -1,12 +1,12 @@
 {
 	"title": "ModLauncher",
-	"description": "a simple system for launching mod states on startup",
+	"description": "a simple system for launching fnf mod states on startup",
 	
 	"contributors": [
-		{"name": "cyn0x8"}
+		{"name": "cyn0x8", "role": "coder"}
 	],
 	
 	"api_version": "0.1.0",
-	"mod_version": "2.0.0",
+	"mod_version": "2.0.1",
 	"license": "none"
 }

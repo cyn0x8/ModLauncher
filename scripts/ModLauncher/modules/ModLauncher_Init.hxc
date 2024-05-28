@@ -1,12 +1,13 @@
 import flixel.FlxG;
 
-import funkin.Preferences;
+import Main;
 
+import funkin.Preferences;
 import funkin.modding.base.ScriptedMusicBeatState;
+import funkin.modding.module.ModuleHandler;
 import funkin.modding.module.Module;
 import funkin.save.Save;
 import funkin.ui.title.TitleState;
-import funkin.util.ReflectUtil;
 import funkin.util.WindowUtil;
 
 class ModLauncher_Init extends Module {
@@ -17,13 +18,24 @@ class ModLauncher_Init extends Module {
 	}
 	
 	public function onCreate(event:ScriptEvent):Void {
-		FlxG.mouse.set_visible(false);
-		
 		if (Save.instance.modOptions.get("ModLauncher") == null) {
 			Save.instance.modOptions.set("ModLauncher", {
 				selected_mod: ""
 			});
 		}
+		
+		if (ModuleHandler.getModule("BootStrapBinds") != null) {
+			trace("ModBootstrap found, disabling ModLauncher");
+			
+			exit();
+			
+			active = false;
+			return;
+		}
+		
+		Main.fpsCounter.alpha = 0.0001;
+		Main.memoryCounter.alpha = 0.0001;
+		FlxG.mouse.set_visible(false);
 		
 		WindowUtil.windowExit.add(exit);
 	}
@@ -34,9 +46,9 @@ class ModLauncher_Init extends Module {
 				return;
 			}
 			
-			initialized = true;
-			
 			FlxG.switchState(ScriptedMusicBeatState.init("ModLauncher_State"));
+			
+			initialized = true;
 		}
 	}
 	
@@ -54,7 +66,7 @@ class ModLauncher_Init extends Module {
 		}
 	}
 	
-	public function exit(_):Void {
+	public function exit(?_):Void {
 		Save.instance.modOptions.get("ModLauncher").selected_mod = "";
 		
 		Save.instance.flush();

@@ -8,6 +8,8 @@ import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import flixel.util.FlxTimer;
 
+import Main;
+
 import funkin.Paths;
 import funkin.PlayerSettings;
 import funkin.audio.FunkinSound;
@@ -25,7 +27,7 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 	private var music:FunkinSound;
 	
 	public var cam_ui:FunkinCamera;
-	private var underlay:FlxBackdrop;
+	private var bg_overlay:FlxBackdrop;
 	private var logos:FlxTypedSpriteGroup;
 	private var header:Alphabet;
 	
@@ -39,7 +41,7 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 		persistentUpdate = true;
 	}
 	
-	private function setup_fnf_bind():Void {
+	private function fnf_bind():Void {
 		var bg_group:FlxTypedSpriteGroup = new FlxTypedSpriteGroup();
 		
 		var bg:FlxBackdrop = new FlxBackdrop(Paths.image("ModLauncher/fnf/bricks"));
@@ -106,7 +108,6 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 		light_2.scrollFactor.set(0.25, 0.25);
 		
 		var noise_shader:ScriptedFlxRuntimeShader = ScriptedFlxRuntimeShader.init("ModLauncher_NoiseShader");
-		noise_shader.scriptCall("set_size", [1]);
 		noise_shader.scriptCall("set_mix", [0.25]);
 		
 		var logo:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/logo");
@@ -152,7 +153,7 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 		
 		binds = ModuleHandler.getModule("ModLauncher_Binding").scriptGet("binds");
 		
-		setup_fnf_bind();
+		fnf_bind();
 		
 		for (i in 0 ... binds.length) {
 			var data:Dynamic = binds[i];
@@ -181,11 +182,11 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 		FlxG.cameras.add(cam_ui, true);
 		FlxTween.tween(cam_ui, {zoom: 1}, 1.25, {ease: FlxEase.expoOut});
 		
-		underlay = new FlxBackdrop().makeGraphic(1280, 720, 0xff000000);
-		underlay.scrollFactor.set(0, 0);
-		underlay.cameras = [cam_ui];
-		underlay.alpha = 0.0001;
-		add(underlay);
+		bg_overlay = new FlxBackdrop().makeGraphic(1280, 720, 0xff000000);
+		bg_overlay.scrollFactor.set(0, 0);
+		bg_overlay.cameras = [cam_ui];
+		bg_overlay.alpha = 0.0001;
+		add(bg_overlay);
 		
 		logos = new FlxTypedSpriteGroup();
 		
@@ -263,9 +264,9 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 		FlxTween.globalManager.cancelTweensOf(data.logo.scale, ["x", "y"]);
 		FlxTween.tween(data.logo.scale, {x: data.logo_scale, y: data.logo_scale}, 1, {ease: FlxEase.expoOut});
 		
-		FlxTween.globalManager.cancelTweensOf(underlay, ["alpha"]);
-		underlay.alpha = 0.0001;
-		FlxTween.tween(underlay, {alpha: 1}, 0.25, {ease: FlxEase.quadIn, onComplete: (tween:FlxTween) -> {
+		FlxTween.globalManager.cancelTweensOf(bg_overlay, ["alpha"]);
+		bg_overlay.alpha = 0.0001;
+		FlxTween.tween(bg_overlay, {alpha: 1}, 0.25, {ease: FlxEase.quadIn, onComplete: (tween:FlxTween) -> {
 			if (data.on_focus != null) {
 				data.on_focus(data);
 			}
@@ -274,8 +275,8 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 				binds[i].cam.alpha = i == selected ? 1 : 0.0001;
 			}
 			
-			underlay.alpha = 1;
-			FlxTween.tween(underlay, {alpha: 0.0001}, 0.25, {ease: FlxEase.quadOut});
+			bg_overlay.alpha = 1;
+			FlxTween.tween(bg_overlay, {alpha: 0.0001}, 0.25, {ease: FlxEase.quadOut});
 		}});
 	}
 	
@@ -335,6 +336,9 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 						FlxG.switchState(ScriptedMusicBeatState.init(data.target));
 						FlxG.sound.music = null;
 						
+						Main.fpsCounter.alpha = 1;
+						Main.memoryCounter.alpha = 1;
+						
 						trace("selected mod \"" + Save.instance.modOptions.get("ModLauncher").selected_mod + "\"");
 					});
 				});
@@ -361,6 +365,8 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 			}
 		}
 		
+		Main.fpsCounter.alpha = 0.0001;
+		Main.memoryCounter.alpha = 0.0001;
 		FlxG.mouse.set_visible(false);
 	}
 }
