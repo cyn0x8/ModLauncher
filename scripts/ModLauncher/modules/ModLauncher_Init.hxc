@@ -40,7 +40,7 @@ class ModLauncher_Init extends Module {
 				bg_group: (group) -> {
 					return; // do nothing.
 				},
-				disclaimer: ""
+				disclaimer: "If no mods installed supports ModLauncher, it will simply open base game instead."
 			}]);
 		} else {
 			Main.fpsCounter.alpha = 0.0001;
