@@ -282,7 +282,13 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 	
 	public override function update(elapsed:Float):Void {
 		super.update(elapsed);
-		
+		if (input && FlxG.keys.justPressed.TAB && ModuleHandler.getModule("ModLauncher_Init").scriptGet("bootstrap")) {
+			ambience.stop();
+			ambience.destroy();
+			music.stop();
+			music.destroy();
+			FlxG.switchState(ScriptedMusicBeatState.init("BootStrapState"));
+		}
 		if (input && PlayerSettings.player1.controls.ACCEPT) {
 			input = false;
 			
