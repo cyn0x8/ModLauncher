@@ -100,7 +100,11 @@ If you want your mod to be compatible with both, use `ModuleHandler` to check fo
 var launcher:Module;
 if ((launcher = ModuleHandler.getModule("BootStrapBinds")) != null) {
 	// bind to ModBootstrap
-} else if ((launcher = ModuleHandler.getModule("ModLauncher_Binding")) != null) {
+} else {
+	// fail scenario
+}
+
+if ((launcher = ModuleHandler.getModule("ModLauncher_Binding")) != null) {
 	// bind to ModLauncher
 } else {
 	// fail scenario
