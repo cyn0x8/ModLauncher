@@ -12,6 +12,7 @@ import funkin.util.WindowUtil;
 
 class ModLauncher_Init extends Module {
 	public var initialized:Bool = false;
+	public var bootstrap:Bool = false;
 	
 	public function new() {
 		super("ModLauncher_Init", 1);
@@ -25,24 +26,33 @@ class ModLauncher_Init extends Module {
 		}
 		
 		if (ModuleHandler.getModule("BootStrapBinds") != null) {
-			trace("ModBootstrap found, disabling ModLauncher");
-			
-			exit();
-			
-			active = false;
-			return;
-		}
-		
-		Main.fpsCounter.alpha = 0.0001;
-		Main.memoryCounter.alpha = 0.0001;
-		FlxG.mouse.set_visible(false);
-		
+			trace("ModBootstrap found, adding to BootStrapBinds");
+			bootstrap = true;
+			ModuleHandler.getModule("BootStrapBinds").scriptCall("bind", [{
+				name: "ModLancher",
+				description: "A simple system for launching mod states on startup.",
+				target: "ModLauncher_State",
+				logo: '',
+				bg: 'ModLauncher/fnf/bricks',
+				icon: 'fnficon32',
+				author: "cyn0x8",
+				color: 0xFFff2b77,
+				bg_group: (group) -> {
+					return; // do nothing.
+				},
+				disclaimer: ""
+			}]);
+		} else {
+			Main.fpsCounter.alpha = 0.0001;
+			Main.memoryCounter.alpha = 0.0001;
+			FlxG.mouse.set_visible(false);
+		}		
 		WindowUtil.windowExit.add(exit);
 	}
 	
 	public function onStateChangeEnd(event:StateChangeScriptEvent):Void {
 		if (Std.isOfType(event.targetState, TitleState)) {
-			if (initialized || (!initialized && Save.instance.modOptions.get("ModLauncher").selected_mod == "none")) {
+			if (initialized || (!initialized && Save.instance.modOptions.get("ModLauncher").selected_mod == "none") || bootstrap) {
 				return;
 			}
 			
