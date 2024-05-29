@@ -25,24 +25,39 @@ class ModLauncher_Init extends Module {
 		}
 		
 		if (ModuleHandler.getModule("BootStrapBinds") != null) {
-			trace("ModBootstrap found, disabling ModLauncher");
+			trace("ModBootstrap found, binding ModLauncher");
 			
-			exit();
-			
-			active = false;
-			return;
+			ModuleHandler.getModule("BootStrapBinds").scriptCall("bind", [{
+				name: "ModLauncher",
+				author: "cyn0x8",
+				
+				description: "A simple system for launching mod states on startup.",
+				disclaimer: "If no mods are bound, it will simply open FNF.",
+				
+				color: 0xff404080,
+				target: "ModLauncher_State",
+				
+				icon: "fnficon32",
+				logo: "",
+				bg: "ModLauncher/fnf/bricks",
+				bg_group: (group:FlxTypedSpriteGroup) -> {}
+			}]);
+		} else {
+			Main.fpsCounter.alpha = 0.0001;
+			Main.memoryCounter.alpha = 0.0001;
+			FlxG.mouse.set_visible(false);
 		}
-		
-		Main.fpsCounter.alpha = 0.0001;
-		Main.memoryCounter.alpha = 0.0001;
-		FlxG.mouse.set_visible(false);
 		
 		WindowUtil.windowExit.add(exit);
 	}
 	
 	public function onStateChangeEnd(event:StateChangeScriptEvent):Void {
 		if (Std.isOfType(event.targetState, TitleState)) {
-			if (initialized || (!initialized && Save.instance.modOptions.get("ModLauncher").selected_mod == "none")) {
+			if (
+				initialized ||
+				(!initialized && Save.instance.modOptions.get("ModLauncher").selected_mod == "none") ||
+				ModuleHandler.getModule("BootStrapBinds") != null
+			) {
 				return;
 			}
 			
