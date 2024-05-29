@@ -6,7 +6,7 @@ A simple system for launching mod states on startup.
 
 ## Usage
 
-[Download the latest version (v2.0.1) here.](https://github.com/cyn0x8/ModLauncher/releases)
+[Download the latest version (v2.1.0) here.](https://github.com/cyn0x8/ModLauncher/releases)
 
 For players, just drag/drop the `ModLauncher.zip` into the `mods` folder.
 The launcher will automatically detect mods that bind to it and display them in the launcher state.
