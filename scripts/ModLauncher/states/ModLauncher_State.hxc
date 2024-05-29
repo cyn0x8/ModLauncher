@@ -1,9 +1,6 @@
-import openfl.filters.ShaderFilter;
-
 import flixel.FlxG;
 import flixel.addons.display.FlxBackdrop;
 import flixel.group.FlxTypedSpriteGroup;
-import flixel.math.FlxMath;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import flixel.util.FlxTimer;
@@ -15,7 +12,6 @@ import funkin.PlayerSettings;
 import funkin.audio.FunkinSound;
 import funkin.graphics.FunkinCamera;
 import funkin.graphics.FunkinSprite;
-import funkin.modding.base.ScriptedFlxRuntimeShader;
 import funkin.modding.base.ScriptedMusicBeatState;
 import funkin.modding.module.ModuleHandler;
 import funkin.save.Save;
@@ -41,103 +37,6 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 		persistentUpdate = true;
 	}
 	
-	private function fnf_bind():Void {
-		var bg_group:FlxTypedSpriteGroup = new FlxTypedSpriteGroup();
-		
-		var bg:FlxBackdrop = new FlxBackdrop(Paths.image("ModLauncher/fnf/bricks"));
-		bg.scale.set(0.5, 0.5);
-		bg.antialiasing = true;
-		bg_group.add(bg);
-		bg.scrollFactor.set(0.2, 0.2);
-		
-		for (i in 0 ... 2) {
-			var truss:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/truss");
-			
-			var z:Float = FlxG.random.float(2 / 3, 0.875);
-			truss.scale.set(z, z);
-			
-			truss.screenCenter();
-			truss.y += i * 720 - 360;
-			truss.angle = FlxG.random.float(-30, 30);
-			
-			truss.antialiasing = true;
-			bg_group.add(truss);
-			
-			z = FlxMath.remapToRange(z, 2 / 3, 0.875, 0.3, 0.8);
-			truss.scrollFactor.set(z, z);
-		}
-		
-		for (i in 0 ... 3) {
-			var line:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/line");
-			
-			var z:Float = FlxG.random.float(1.5, 3);
-			line.scale.set(z, z);
-			
-			line.screenCenter();
-			line.y = FlxG.random.float(-720, binds.length * 720);
-			
-			line.angle = FlxG.random.float(-30, 30);
-			
-			line.antialiasing = true;
-			bg_group.add(line);
-			
-			z = FlxMath.remapToRange(z, 1.5, 3, 0.5, 0.9);
-			line.scrollFactor.set(z, z);
-		}
-		
-		var light_1:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/light");
-		light_1.scale.set(3, 2);
-		light_1.updateHitbox();
-		light_1.screenCenter(0x01); // X
-		light_1.y = -light_1.frameHeight / 2 * light_1.scale.y - 50;
-		light_1.color = 0xff9040ff;
-		light_1.blend = 0; // add
-		light_1.alpha = 0.25;
-		bg_group.add(light_1);
-		light_1.scrollFactor.set(0.25, 0.25);
-		
-		var light_2:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/light");
-		light_2.scale.set(10, 2.5);
-		light_2.updateHitbox();
-		light_2.screenCenter(0x01); // X
-		light_2.y = 720 - light_2.frameHeight / 2 * light_2.scale.y + 50;
-		light_2.color = 0xff0000ff;
-		light_2.blend = 9; // multiply
-		light_2.alpha = 0.75;
-		bg_group.add(light_2);
-		light_2.scrollFactor.set(0.25, 0.25);
-		
-		var noise_shader:ScriptedFlxRuntimeShader = ScriptedFlxRuntimeShader.init("ModLauncher_NoiseShader");
-		noise_shader.scriptCall("set_mix", [0.25]);
-		
-		var logo:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/logo");
-		
-		ModuleHandler.getModule("ModLauncher_Binding").scriptCall("bind", [{
-			name: "none",
-			
-			target: "FNF_TitleState",
-			
-			logo: logo,
-			
-			bg_group: bg_group,
-			
-			on_setup: (data:Dynamic) -> {
-				data.cam.filters = [new ShaderFilter(noise_shader)];
-			},
-			
-			on_focus: null,
-			on_defocus: null,
-			
-			on_select: null,
-			
-			on_update: (data:Dynamic, elapsed:Float) -> {
-				noise_shader.scriptCall("set_time", [noise_shader.scriptCall("get_time") + elapsed * 2]);
-			}
-		}]);
-		
-		binds.unshift(binds.pop());
-	}
-	
 	public function create():Void {
 		super.create();
 		
@@ -153,10 +52,12 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 		
 		binds = ModuleHandler.getModule("ModLauncher_Binding").scriptGet("binds");
 		
-		fnf_bind();
-		
 		for (i in 0 ... binds.length) {
 			var data:Dynamic = binds[i];
+			
+			if (data.cam != null) {
+				data.cam.destroy();
+			}
 			
 			var cam:FlxCamera = new FunkinCamera("ModLauncher_cam_" + data.name, 0, 0, 1280, 720, 1);
 			cam.zoom = 1.25;
@@ -167,10 +68,12 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 			
 			var bg_group:FlxTypedSpriteGroup = data.bg_group;
 			
-			if (bg_group == null) {
-				bg_group = new FlxTypedSpriteGroup();
-				data.bg_group = bg_group;
+			if (bg_group != null) {
+				bg_group.destroy();
 			}
+			
+			bg_group = new FlxTypedSpriteGroup();
+			data.bg_group = bg_group;
 			
 			bg_group.cameras = [cam];
 			add(bg_group);
@@ -193,11 +96,13 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 		for (i in 0 ... binds.length) {
 			var data:Dynamic = binds[i];
 			
-			var logo = data.logo;
+			if (data.logo != null) {
+				data.logo.destroy();
+			}
 			
-			if (logo == null || logo.frameWidth == 0 || logo.frameHeight == 0) {
+			var logo = new FunkinSprite().loadTexture(data.logo_path);
+			if (logo.frameWidth == 0 || logo.frameHeight == 0) {
 				logo = new FunkinSprite().makeGraphic(1, 1, 0xffffffff);
-				data.logo = logo;
 			}
 			
 			var scale:Float = (720 / logo.frameHeight) * 0.5;
@@ -212,6 +117,8 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 			
 			logo.cameras = [cam_ui];
 			logos.add(logo);
+			
+			data.logo = logo;
 			
 			if (data.on_setup != null) {
 				data.on_setup(data);
@@ -282,81 +189,85 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 	
 	public override function update(elapsed:Float):Void {
 		super.update(elapsed);
-		if (input && FlxG.keys.justPressed.TAB && ModuleHandler.getModule("ModLauncher_Init").scriptGet("bootstrap")) {
-			ambience.stop();
-			ambience.destroy();
-			music.stop();
-			music.destroy();
-			FlxG.switchState(ScriptedMusicBeatState.init("BootStrapState"));
-		}
-		if (input && PlayerSettings.player1.controls.ACCEPT) {
-			input = false;
-			
-			FunkinSound.playOnce(Paths.sound("confirmMenu"), 0.75);
-			
-			ambience.fadeOut(1, 0, (tween:FlxTween) -> {
+		
+		if (input) {
+			if (FlxG.keys.justPressed.TAB && ModuleHandler.getModule("BootStrapBinds") != null) {
 				ambience.stop();
 				ambience.destroy();
 				
-				tween.destroy();
-			});
-			
-			music.fadeOut(1, 0, (tween:FlxTween) -> {
 				music.stop();
 				music.destroy();
 				
-				tween.destroy();
-			});
-			
-			FlxTween.tween(cam_ui, {zoom: 1.15}, 2, {ease: FlxEase.expoOut});
-			
-			FlxTween.tween(header, {y: -50}, 1, {ease: FlxEase.cubeOut});
-			
-			for (i in 0 ... binds.length) {
-				FlxTween.tween(binds[i].cam, {zoom: 1.075}, 2, {ease: FlxEase.expoOut});
-			}
-			
-			var data:Dynamic = binds[selected];
-			
-			FlxTween.globalManager.cancelTweensOf(data.logo.scale, ["x", "y"]);
-			data.logo.scale.set(data.logo_scale * 0.9, data.logo_scale * 0.9);
-			FlxTween.tween(data.logo.scale, {x: data.logo_scale, y: data.logo_scale}, 2, {ease: FlxEase.circOut});
-			
-			new FlxTimer().start(1, () -> {
-				transitionOut(() -> {
-					for (logo in logos.members) {
-						logo.alpha = 0.0001;
-					}
+				FlxG.switchState(ScriptedMusicBeatState.init("BootStrapState"));
+			} else if (PlayerSettings.player1.controls.ACCEPT) {
+				input = false;
+				
+				FunkinSound.playOnce(Paths.sound("confirmMenu"), 0.75);
+				
+				ambience.fadeOut(1, 0, (tween:FlxTween) -> {
+					ambience.stop();
+					ambience.destroy();
 					
-					header.alpha = 0.0001;
+					tween.destroy();
+				});
+				
+				music.fadeOut(1, 0, (tween:FlxTween) -> {
+					music.stop();
+					music.destroy();
 					
-					cam_ui.bgColor = 0xff000000;
-					
-					new FlxTimer().start(0.5, () -> {
-						Save.instance.modOptions.get("ModLauncher").selected_mod = data.name;
-						
-						if (data.on_init != null) {
-							data.on_init(data);
+					tween.destroy();
+				});
+				
+				FlxTween.tween(cam_ui, {zoom: 1.15}, 2, {ease: FlxEase.expoOut});
+				
+				FlxTween.tween(header, {y: -50}, 1, {ease: FlxEase.cubeOut});
+				
+				for (i in 0 ... binds.length) {
+					FlxTween.tween(binds[i].cam, {zoom: 1.075}, 2, {ease: FlxEase.expoOut});
+				}
+				
+				var data:Dynamic = binds[selected];
+				
+				FlxTween.globalManager.cancelTweensOf(data.logo.scale, ["x", "y"]);
+				data.logo.scale.set(data.logo_scale * 0.9, data.logo_scale * 0.9);
+				FlxTween.tween(data.logo.scale, {x: data.logo_scale, y: data.logo_scale}, 2, {ease: FlxEase.circOut});
+				
+				new FlxTimer().start(1, () -> {
+					transitionOut(() -> {
+						for (logo in logos.members) {
+							logo.alpha = 0.0001;
 						}
 						
-						FlxG.switchState(ScriptedMusicBeatState.init(data.target));
-						FlxG.sound.music = null;
+						header.alpha = 0.0001;
 						
-						Main.fpsCounter.alpha = 1;
-						Main.memoryCounter.alpha = 1;
+						cam_ui.bgColor = 0xff000000;
 						
-						trace("selected mod \"" + Save.instance.modOptions.get("ModLauncher").selected_mod + "\"");
+						new FlxTimer().start(0.5, () -> {
+							Save.instance.modOptions.get("ModLauncher").selected_mod = data.name;
+							
+							if (data.on_init != null) {
+								data.on_init(data);
+							}
+							
+							FlxG.switchState(ScriptedMusicBeatState.init(data.target));
+							FlxG.sound.music = null;
+							
+							Main.fpsCounter.alpha = 1;
+							Main.memoryCounter.alpha = 1;
+							
+							trace("selected mod \"" + Save.instance.modOptions.get("ModLauncher").selected_mod + "\"");
+						});
 					});
 				});
-			});
-			
-			if (data.on_select != null) {
-				data.on_select(data);
+				
+				if (data.on_select != null) {
+					data.on_select(data);
+				}
+			} else if (PlayerSettings.player1.controls.UI_UP_P) {
+				increment(-1);
+			} else if (PlayerSettings.player1.controls.UI_DOWN_P) {
+				increment(1);
 			}
-		} else if (PlayerSettings.player1.controls.UI_UP_P) {
-			increment(-1);
-		} else if (PlayerSettings.player1.controls.UI_DOWN_P) {
-			increment(1);
 		}
 		
 		cam_ui.scroll.y = MathUtil.lerp(selected * 720, cam_ui.scroll.y, MathUtil.exp2(-elapsed / 0.125));
@@ -374,5 +285,30 @@ class ModLauncher_State extends ScriptedMusicBeatState {
 		Main.fpsCounter.alpha = 0.0001;
 		Main.memoryCounter.alpha = 0.0001;
 		FlxG.mouse.set_visible(false);
+	}
+	
+	public override function destroy():Void {
+		super.destroy();
+		
+		trace("destroying mod launcher state");
+		
+		for (i in 0 ... binds.length) {
+			var data:Dynamic = binds[i];
+			
+			if (data.logo != null) {
+				data.logo.destroy();
+				data.logo = null;
+			}
+			
+			if (data.bg_group != null) {
+				data.bg_group.destroy();
+				data.bg_group = null;
+			}
+			
+			if (data.cam != null) {
+				data.cam.destroy();
+				data.cam = null;
+			}
+		}
 	}
 }

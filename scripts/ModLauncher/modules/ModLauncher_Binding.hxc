@@ -1,30 +1,43 @@
-import flixel.group.FlxTypedSpriteGroup;
+import openfl.filters.ShaderFilter;
 
+import flixel.FlxG;
+import flixel.addons.display.FlxBackdrop;
+import flixel.group.FlxTypedSpriteGroup;
+import flixel.math.FlxMath;
+
+import funkin.Paths;
 import funkin.graphics.FunkinCamera;
 import funkin.graphics.FunkinSprite;
+import funkin.modding.base.ScriptedFlxRuntimeShader;
 import funkin.modding.module.Module;
 
 typedef Bind = {
-	// to pass into the `bind` function
+	// required fields to pass into the `bind` function:
+	
 	name:String, // name of your mod, `Save.instance.modOptions.get("ModLauncher").selected_mod` will be set to this after on_init
 	target:String, // target `ScriptedMusicBeatState` class name to open after `on_init`
 	
-	logo:FunkinSprite, // the logo sprite
-	bg_group:FlxTypedSpriteGroup, // the sprite group added to your mod bg camera
+	logo_path:String, // path to your mod's logo bitmap
 	
-	on_setup:Null<(Dynamic)->Void>, // called when your mod is first bound (camera exists starting here)
+	// launcher callbacks:
 	
-	on_update:Null<(Dynamic, Float)->Void>, // called every frame
+	on_setup:Null<(Dynamic)->Void>, // called when the launcher state is opened
+	
+	on_update:Null<(Dynamic, Float)->Void>, // called every frame while in the launcher
 	
 	on_focus:Null<(Dynamic)->Void>, // when the user focuses on your mod
 	on_unfocus:Null<(Dynamic)->Void>, // when the user changes selection to another mod
 	
 	on_select:Null<(Dynamic)->Void>, // when the user selects your mod
-	on_init:Null<(Dynamic)->Void>, // code to run right before the target state opens
+	on_init:Null<(Dynamic)->Void>, // code to run right before the target state opens, useful for conditionally setting stuff if your mod is selected
 	
-	// internally set up by the launcher
-	cam: Null<FunkinCamera>, // the bg camera `bg_group` is added to
-	logo_scale: Float // the base scale of the logo (automatically resized to half screen height)
+	// internally set up by the launcher (available in `data` passed to callbacks):
+	
+	logo:FunkinSprite, // the logo sprite
+	bg_group:FlxTypedSpriteGroup, // the sprite group added to your mod's bg camera
+	
+	cam:Null<FunkinCamera>, // the bg camera `bg_group` is added to
+	logo_scale:Float // the base scale of the logo (automatically resized to half screen height)
 }
 
 class ModLauncher_Binding extends Module {
@@ -32,8 +45,96 @@ class ModLauncher_Binding extends Module {
 		super("ModLauncher_Binding", 2);
 	}
 	
+	private function fnf_bind():Void {
+		var noise_shader:ScriptedFlxRuntimeShader = ScriptedFlxRuntimeShader.init("ModLauncher_NoiseShader");
+		noise_shader.scriptCall("set_mix", [0.25]);
+		
+		bind({
+			name: "none",
+			
+			target: "FNF_TitleState",
+			
+			logo_path: "ModLauncher/fnf/logo",
+			
+			on_setup: (data:Dynamic) -> {
+				var bg:FlxBackdrop = new FlxBackdrop(Paths.image("ModLauncher/fnf/bricks"));
+				bg.scale.set(0.5, 0.5);
+				bg.antialiasing = true;
+				data.bg_group.add(bg);
+				bg.scrollFactor.set(0.2, 0.2);
+				
+				for (i in 0 ... 2) {
+					var truss:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/truss");
+					
+					var z:Float = FlxG.random.float(2 / 3, 0.875);
+					truss.scale.set(z, z);
+					
+					truss.screenCenter();
+					truss.y += i * 720 - 360;
+					truss.angle = FlxG.random.float(-30, 30);
+					
+					truss.antialiasing = true;
+					data.bg_group.add(truss);
+					
+					z = FlxMath.remapToRange(z, 2 / 3, 0.875, 0.3, 0.8);
+					truss.scrollFactor.set(z, z);
+				}
+				
+				for (i in 0 ... 3) {
+					var line:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/line");
+					
+					var z:Float = FlxG.random.float(1.5, 3);
+					line.scale.set(z, z);
+					
+					line.screenCenter();
+					line.y = FlxG.random.float(-720, binds.length * 720);
+					
+					line.angle = FlxG.random.float(-30, 30);
+					
+					line.antialiasing = true;
+					data.bg_group.add(line);
+					
+					z = FlxMath.remapToRange(z, 1.5, 3, 0.5, 0.9);
+					line.scrollFactor.set(z, z);
+				}
+				
+				var light_1:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/light");
+				light_1.scale.set(3, 2);
+				light_1.updateHitbox();
+				light_1.screenCenter(0x01); // X
+				light_1.y = -light_1.frameHeight / 2 * light_1.scale.y - 50;
+				light_1.color = 0xff9040ff;
+				light_1.blend = 0; // add
+				light_1.alpha = 0.25;
+				data.bg_group.add(light_1);
+				light_1.scrollFactor.set(0.25, 0.25);
+				
+				var light_2:FunkinSprite = new FunkinSprite().loadTexture("ModLauncher/fnf/light");
+				light_2.scale.set(10, 2.5);
+				light_2.updateHitbox();
+				light_2.screenCenter(0x01); // X
+				light_2.y = 720 - light_2.frameHeight / 2 * light_2.scale.y + 50;
+				light_2.color = 0xff0000ff;
+				light_2.blend = 9; // multiply
+				light_2.alpha = 0.75;
+				data.bg_group.add(light_2);
+				light_2.scrollFactor.set(0.25, 0.25);
+				
+				data.cam.filters = [new ShaderFilter(noise_shader)];
+			},
+			
+			on_update: (data:Dynamic, elapsed:Float) -> {
+				noise_shader.scriptCall("set_time", [noise_shader.scriptCall("get_time") + elapsed * 2]);
+			}
+		});
+		
+		binds.unshift(binds.pop());
+	}
+	
 	public function onCreate(event:ScriptEvent):Void {
 		active = false;
+		
+		fnf_bind();
 	}
 	
 	public var binds:Array<Dynamic> = [];
@@ -43,8 +144,7 @@ class ModLauncher_Binding extends Module {
 			name:       data.name,
 			target:     data.target,
 			
-			logo:       data.logo,
-			bg_group:   data.bg_group,
+			logo_path:  data.logo_path,
 			
 			on_setup:   data.on_setup,
 			
@@ -55,6 +155,9 @@ class ModLauncher_Binding extends Module {
 			
 			on_select:  data.on_select,
 			on_init:    data.on_init,
+			
+			logo: null,
+			bg_group: null,
 			
 			cam: null,
 			logo_scale: 0
