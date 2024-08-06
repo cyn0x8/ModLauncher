@@ -1,3 +1,8 @@
+> [!IMPORTANT]  
+> This repo is deprecated! ModLauncher is being completely rewritten. When the new version releases, this repo will be deleted and the new one will be hosted [here](https://git.gay/cyn0x8/modlauncher).
+
+---
+
 # ModLauncher
 
 A simple system for launching mod states on startup.
